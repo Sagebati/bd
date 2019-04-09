@@ -7,12 +7,25 @@ from pyspark.sql.session import SparkSession
 
 
 def metrics(test_df, model):
-    prediction_and_labels = test_df.map(lambda lp: (float(model.predict(lp.features)), lp.label))
+    prediction_and_labels = test_df.RDD.map(lambda lp: (float(model.predict(lp.features)), lp.label))
     return BinaryClassificationMetrics(prediction_and_labels)
+
+
+def quiet_logs(sc):
+    """
+    Suppress Info logging.
+    :param sc: Saprk context
+    :return: None
+    """
+    logger = sc._jvm.org.apache.log4j
+    logger.LogManager.getLogger("org").setLevel(logger.Level.WARN)
+    logger.LogManager.getLogger("akka").setLevel(logger.Level.WARN)
 
 
 sc = SparkContext('local')
 spark = SparkSession(sc)
+
+quiet_logs(sc)
 
 df = spark.read.csv('Sentiment Analysis Dataset.csv', header=True)
 
@@ -40,7 +53,7 @@ predictions_nb = nb_model.transform(test_data)
 
 
 # Logistic regression
-lr = LogisticRegression(maxIter=100)
+lr = LogisticRegression(maxIter=3)
 
 lrModel = lr.fit(trainingData)  # learn
 predictions_lr = lrModel.transform(test_data)  # test
@@ -54,4 +67,4 @@ dt_model = dt.fit(trainingData)
 predictions_dt = dt_model.transform(test_data)
 predictions_dt.show(5)
 
-
+# TODO Faire les metrics avec Binary classification et Ternary classification
