@@ -4,6 +4,7 @@ from pyspark.ml.classification import LogisticRegression, DecisionTreeClassifier
 from pyspark.ml.feature import Tokenizer, IDF, HashingTF, StringIndexer, StopWordsRemover
 from pyspark.ml.pipeline import Pipeline
 from pyspark.mllib.evaluation import BinaryClassificationMetrics
+from pyspark.ml.evaluation import BinaryClassificationEvaluator
 from pyspark.sql.session import SparkSession
 import os
 
@@ -33,7 +34,7 @@ df = spark.read.csv('Sentiment Analysis Dataset.csv', header=True)
 
 tokenizer = Tokenizer(inputCol="SentimentText", outputCol="tokens")
 stop_remover = StopWordsRemover(inputCol="tokens", outputCol="words")
-hash_tf = HashingTF(numFeatures=2 ** 16, inputCol="words", outputCol='tf')
+hash_tf = HashingTF(numFeatures=2 ** 16, inputCol="words", outputCol='tf') # Term frequencies
 idf = IDF(inputCol='tf', outputCol="features", minDocFreq=5)  # minDocFreq: remove sparse terms
 label_stringIdx = StringIndexer(inputCol="Sentiment", outputCol="label")
 
@@ -56,6 +57,16 @@ predictions_nb = nb_model.transform(test_data)
 
 nb_model.write().overwrite().save('bayes')
 predictions_nb.show(10)
+
+# label = predictions_nb.select("label").collect()
+# predictions_nb_col = predictions_nb.select("prediction").collect()
+
+# Compute raw scores on the test set
+predictionAndLabels = test_data.rdd.map(lambda lp: (float(nb_model.predict(lp.features)), lp.label))
+
+evaluator = BinaryClassificationEvaluator(rawPredictionCol="rawPrediction")
+print('Test Area Under ROC', evaluator.evaluate(predictions_nb))
+
 
 # Logistic regression
 lr = LogisticRegression(maxIter=3)
