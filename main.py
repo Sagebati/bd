@@ -1,12 +1,13 @@
+import os
+
+from pyspark import SparkConf
 from pyspark.context import SparkContext
 from pyspark.ml.classification import LogisticRegression, DecisionTreeClassifier, NaiveBayes, LogisticRegressionModel, \
     NaiveBayesModel
+from pyspark.ml.evaluation import BinaryClassificationEvaluator
 from pyspark.ml.feature import Tokenizer, IDF, HashingTF, StringIndexer, StopWordsRemover
 from pyspark.ml.pipeline import Pipeline
-from pyspark.mllib.evaluation import BinaryClassificationMetrics
-from pyspark.ml.evaluation import BinaryClassificationEvaluator
 from pyspark.sql.session import SparkSession
-import os
 
 
 def quiet_logs(sc):
@@ -20,7 +21,9 @@ def quiet_logs(sc):
     logger.LogManager.getLogger("akka").setLevel(logger.Level.WARN)
 
 
-sc = SparkContext('local')
+conf = SparkConf().set(key="spark.executor.memory", value="16G").set(key="spark.driver.memory", value="16G")
+
+sc = SparkContext('', conf=conf)
 spark = SparkSession(sc)
 
 quiet_logs(sc)
@@ -77,7 +80,4 @@ predictions_dt.show(5)
 
 dt_model.write().overwrite().save('dt')
 
-
 print('DT Test Area Under ROC', evaluator.evaluate(predictions_dt))
-
-
