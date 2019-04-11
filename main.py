@@ -1,9 +1,11 @@
 from pyspark.context import SparkContext
-from pyspark.ml.classification import LogisticRegression, DecisionTreeClassifier, NaiveBayes
+from pyspark.ml.classification import LogisticRegression, DecisionTreeClassifier, NaiveBayes, LogisticRegressionModel, \
+    NaiveBayesModel
 from pyspark.ml.feature import Tokenizer, IDF, HashingTF, StringIndexer, StopWordsRemover
 from pyspark.ml.pipeline import Pipeline
 from pyspark.mllib.evaluation import BinaryClassificationMetrics
 from pyspark.sql.session import SparkSession
+import os
 
 
 def metrics(test_df, model):
@@ -48,23 +50,29 @@ df_fitted = pipelineFit.transform(df)
 # Naive Bayes
 nb = NaiveBayes(featuresCol="features", labelCol="label")
 
-nb_model = nb.fit(trainingData)
+# Learn if the ml doesn't exist
+nb_model = NaiveBayesModel.load("bayes") if os.path.exists("bayes") else nb.fit(trainingData)
 predictions_nb = nb_model.transform(test_data)
 
+nb_model.write().overwrite().save('bayes')
+predictions_nb.show(10)
 
 # Logistic regression
 lr = LogisticRegression(maxIter=3)
 
-lrModel = lr.fit(trainingData)  # learn
+lrModel = LogisticRegressionModel.load("lr") if os.path.exists("lr") else lr.fit(trainingData)
 predictions_lr = lrModel.transform(test_data)  # test
 predictions_lr.show(10)
 
+lrModel.write().overwrite().save('lr')
 
 # Decision tree
 dt = DecisionTreeClassifier(labelCol="label", featuresCol="features")
 
-dt_model = dt.fit(trainingData)
+dt_model = DecisionTreeClassifier.load("dt") if os.path.exists("dt") else dt.fit(trainingData)
 predictions_dt = dt_model.transform(test_data)
 predictions_dt.show(5)
+
+dt_model.write().overwrite().save('dt')
 
 # TODO Faire les metrics avec Binary classification et Ternary classification
