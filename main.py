@@ -2,7 +2,8 @@ import os
 
 from pyspark import SparkConf
 from pyspark.context import SparkContext
-from pyspark.ml.classification import LogisticRegression, DecisionTreeClassifier,DecisionTreeClassificationModel, NaiveBayes, LogisticRegressionModel, \
+from pyspark.ml.classification import LogisticRegression, DecisionTreeClassifier, DecisionTreeClassificationModel, \
+    NaiveBayes, LogisticRegressionModel, \
     NaiveBayesModel
 from pyspark.ml.evaluation import BinaryClassificationEvaluator
 from pyspark.ml.feature import Tokenizer, IDF, HashingTF, StringIndexer, StopWordsRemover
@@ -21,10 +22,11 @@ def quiet_logs(sc):
     logger.LogManager.getLogger("akka").setLevel(logger.Level.WARN)
 
 
-sc = SparkContext(conf = SparkConf())
+sc = SparkContext(conf=SparkConf())
 spark = SparkSession(sc)
 
-df = spark.read.csv('/user/samuelbatissou/csv.csv', header=True)
+quiet_logs(sc)
+df = spark.read.csv('Sentiment\ Analysis\ Dataset.csv', header=True)
 
 tokenizer = Tokenizer(inputCol="SentimentText", outputCol="tokens")
 stop_remover = StopWordsRemover(inputCol="tokens", outputCol="words")
@@ -45,34 +47,34 @@ trainingData.cache()
 test_data.cache()
 
 # Naive Bayes
-#nb = NaiveBayes(featuresCol="features", labelCol="label")
+nb = NaiveBayes(featuresCol="features", labelCol="label")
 
 # Learn if the ml doesn't exist
-#nb_model = NaiveBayesModel.load("bayes") if os.path.exists("bayes") else nb.fit(trainingData)
-#predictions_nb = nb_model.transform(test_data)
+nb_model = NaiveBayesModel.load("bayes") if os.path.exists("bayes") else nb.fit(trainingData)
+predictions_nb = nb_model.transform(test_data)
 
-#nb_model.write().overwrite().save('bayes')
-#predictions_nb.show(10)
+nb_model.write().overwrite().save('bayes')
+predictions_nb.show(10)
 
 # Compute raw scores on the test set
 evaluator = BinaryClassificationEvaluator(rawPredictionCol="rawPrediction")
-#print('Bayes Test Area Under ROC', evaluator.evaluate(predictions_nb))
+print('Bayes Test Area Under ROC', evaluator.evaluate(predictions_nb))
 
 # Logistic regression
-#lr = LogisticRegression(maxIter=100)
+lr = LogisticRegression(maxIter=100)
 
-#lrModel = LogisticRegressionModel.load("lr") if os.path.exists("lr") else lr.fit(trainingData)
-#predictions_lr = lrModel.transform(test_data)  # test
-#predictions_lr.show(10)
+lrModel = LogisticRegressionModel.load("lr") if os.path.exists("lr") else lr.fit(trainingData)
+predictions_lr = lrModel.transform(test_data)  # test
+predictions_lr.show(10)
 
-#lrModel.write().overwrite().save('lr')
+lrModel.write().overwrite().save('lr')
 
-#print('LR Test Area Under ROC', evaluator.evaluate(predictions_lr))
+print('LR Test Area Under ROC', evaluator.evaluate(predictions_lr))
 
 # Decision tree
 dt = DecisionTreeClassifier(labelCol="label", featuresCol="features")
 
-dt_model = DecisionTreeClassificationModel.load("dt")#  if os.path.exists("dt") else dt.fit(trainingData)
+dt_model = DecisionTreeClassificationModel.load("dt") if os.path.exists("dt") else dt.fit(trainingData)
 predictions_dt = dt_model.transform(test_data)
 predictions_dt.show(5)
 
