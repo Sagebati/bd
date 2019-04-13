@@ -11,21 +11,9 @@ from pyspark.ml.pipeline import Pipeline
 from pyspark.sql.session import SparkSession
 
 
-def quiet_logs(sc):
-    """
-    Suppress Info logging.
-    :param sc: Saprk context
-    :return: None
-    """
-    logger = sc._jvm.org.apache.log4j
-    logger.LogManager.getLogger("org").setLevel(logger.Level.WARN)
-    logger.LogManager.getLogger("akka").setLevel(logger.Level.WARN)
-
-
 sc = SparkContext(conf=SparkConf())
 spark = SparkSession(sc)
-
-quiet_logs(sc)
+spark.sparkContext.setLogLevel("OFF")
 df = spark.read.csv('Sentiment\ Analysis\ Dataset.csv', header=True)
 
 tokenizer = Tokenizer(inputCol="SentimentText", outputCol="tokens")
