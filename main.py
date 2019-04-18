@@ -10,11 +10,10 @@ from pyspark.ml.feature import Tokenizer, IDF, HashingTF, StringIndexer, StopWor
 from pyspark.ml.pipeline import Pipeline
 from pyspark.sql.session import SparkSession
 
-
 sc = SparkContext(conf=SparkConf())
 spark = SparkSession(sc)
 spark.sparkContext.setLogLevel("OFF")
-df = spark.read.csv('Sentiment\ Analysis\ Dataset.csv', header=True)
+df = spark.read.csv("Sentiment Analysis Dataset.csv", header=True)
 
 tokenizer = Tokenizer(inputCol="SentimentText", outputCol="tokens")
 stop_remover = StopWordsRemover(inputCol="tokens", outputCol="words")
