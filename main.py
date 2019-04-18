@@ -2,7 +2,8 @@ import os
 
 from pyspark import SparkConf
 from pyspark.context import SparkContext
-from pyspark.ml.classification import LogisticRegression, DecisionTreeClassifier, NaiveBayes, LogisticRegressionModel, \
+from pyspark.ml.classification import LogisticRegression, DecisionTreeClassifier, DecisionTreeClassificationModel, \
+    NaiveBayes, LogisticRegressionModel, \
     NaiveBayesModel
 from pyspark.ml.evaluation import BinaryClassificationEvaluator
 from pyspark.ml.feature import Tokenizer, IDF, HashingTF, StringIndexer, StopWordsRemover
@@ -10,25 +11,10 @@ from pyspark.ml.pipeline import Pipeline
 from pyspark.sql.session import SparkSession
 
 
-def quiet_logs(sc):
-    """
-    Suppress Info logging.
-    :param sc: Saprk context
-    :return: None
-    """
-    logger = sc._jvm.org.apache.log4j
-    logger.LogManager.getLogger("org").setLevel(logger.Level.WARN)
-    logger.LogManager.getLogger("akka").setLevel(logger.Level.WARN)
-
-
-conf = SparkConf().set(key="spark.executor.memory", value="16G").set(key="spark.driver.memory", value="16G")
-
-sc = SparkContext('', conf=conf)
+sc = SparkContext(conf=SparkConf())
 spark = SparkSession(sc)
-
-quiet_logs(sc)
-
-df = spark.read.csv('Sentiment Analysis Dataset.csv', header=True)
+spark.sparkContext.setLogLevel("OFF")
+df = spark.read.csv('Sentiment\ Analysis\ Dataset.csv', header=True)
 
 tokenizer = Tokenizer(inputCol="SentimentText", outputCol="tokens")
 stop_remover = StopWordsRemover(inputCol="tokens", outputCol="words")
@@ -45,6 +31,8 @@ df_fitted = pipelineFit.transform(df)
 
 # Data
 (trainingData, test_data) = df_fitted.randomSplit([0.7, 0.3])
+trainingData.cache()
+test_data.cache()
 
 # Naive Bayes
 nb = NaiveBayes(featuresCol="features", labelCol="label")
@@ -61,7 +49,7 @@ evaluator = BinaryClassificationEvaluator(rawPredictionCol="rawPrediction")
 print('Bayes Test Area Under ROC', evaluator.evaluate(predictions_nb))
 
 # Logistic regression
-lr = LogisticRegression(maxIter=3)
+lr = LogisticRegression(maxIter=100)
 
 lrModel = LogisticRegressionModel.load("lr") if os.path.exists("lr") else lr.fit(trainingData)
 predictions_lr = lrModel.transform(test_data)  # test
@@ -74,7 +62,7 @@ print('LR Test Area Under ROC', evaluator.evaluate(predictions_lr))
 # Decision tree
 dt = DecisionTreeClassifier(labelCol="label", featuresCol="features")
 
-dt_model = DecisionTreeClassifier.load("dt") if os.path.exists("dt") else dt.fit(trainingData)
+dt_model = DecisionTreeClassificationModel.load("dt") if os.path.exists("dt") else dt.fit(trainingData)
 predictions_dt = dt_model.transform(test_data)
 predictions_dt.show(5)
 
