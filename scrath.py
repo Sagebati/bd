@@ -10,7 +10,7 @@ import numpy as np
 sc = SparkContext(conf=SparkConf())
 spark = SparkSession(sc)
 
-df = spark.read.csv("Sentiment Analysis Dataset.csv", header=True)
+df = spark.read.csv("csv.csv", header=True)
 (train, test) = df.randomSplit([0.7, 0.3])
 
 train_texts = train.select("SentimentText").rdd.flatMap(lambda x: x).collect()
