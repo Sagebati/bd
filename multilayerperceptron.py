@@ -32,8 +32,8 @@ test_texts = test.select("SentimentText").rdd.flatMap(lambda x: x).collect()
 test_labels = test.select("Sentiment").rdd.flatMap(lambda x: x).collect()
 
 # Utilisation de Word2ve
-file = "/Users/tanguyherserant/Desktop/bdd/saves/tokenSave"
-if not os.path.isfile(file):
+file = "tokenSave"
+if not os.path.exists(file):
     word2Vec = Word2Vec(inputCol="words", outputCol="SentimentTextTransform")
     model = word2Vec.fit(tok.select("words"))
     tokenizer.save(file)
