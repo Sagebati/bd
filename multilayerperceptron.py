@@ -1,13 +1,15 @@
 # -*- coding: utf-8 -*-
 
-from pyspark.ml.classification import MultilayerPerceptronClassifier
+from pyspark.ml.classification import MultilayerPerceptronClassifier, LogisticRegression
 from pyspark.ml.evaluation import MulticlassClassificationEvaluator
-from pyspark.ml.feature import Word2Vec
+from pyspark.ml.feature import Word2Vec, Word2VecModel, StopWordsRemover, HashingTF, IDF, StringIndexer, CountVectorizer
+from pyspark.ml.pipeline import Pipeline, PipelineModel
 from pyspark import SparkContext, SparkConf
 from pyspark.sql import SparkSession
 import numpy as np
 from pyspark.ml.feature import Tokenizer
 import os
+from pyspark.sql.functions import lpad
 
 # init
 sc = SparkContext(conf=SparkConf())
@@ -15,28 +17,31 @@ spark = SparkSession(sc)
 
 # Lecture des données
 
-df = spark.read.csv("csv.csv", header=True)
+df = spark.read.csv("Sentiment Analysis Dataset.csv", header=True)
+
 (train, test) = df.randomSplit([0.7, 0.3])
-#text_word = (i.split(" ") for i in df["SentimentText"].collect())
-#df.withColumn("SentimentText", df.select("SentimentText").split(" "))
-#text_word = df.rdd.map(lambda x: ("SentimentText").split(" ")).show()
+train.show(20)
+tokenizer = Tokenizer(inputCol="SentimentText", outputCol="tokens")
+stop_remover = StopWordsRemover(inputCol="tokens", outputCol="filtered")
+countVectors = CountVectorizer(inputCol="filtered", outputCol="features", vocabSize=140, minDF=5)
+label_stringIdx = StringIndexer(inputCol="Sentiment", outputCol="label")
 
-tokenizer = Tokenizer(inputCol="SentimentText", outputCol="words")
-tok = tokenizer.transform(df)
-df.show(20)
-tok.select("SentimentText", "words").show(20)
-train_texts = train.select("SentimentText").rdd.flatMap(lambda x: x).collect()
-train_labels = train.select("Sentiment").rdd.flatMap(lambda x: x).collect()
+word2vec = Word2Vec(inputCol="filtered", outputCol="features", maxSentenceLength=140)
 
-test_texts = test.select("SentimentText").rdd.flatMap(lambda x: x).collect()
-test_labels = test.select("Sentiment").rdd.flatMap(lambda x: x).collect()
+# mlp = LogisticRegression(maxIter=10, regParam=0.01, featuresCol ="SentimentTextTransform")
+mlp = MultilayerPerceptronClassifier(maxIter=100, layers=[140, 70, 50, 2],
+                                     blockSize=1, seed=123,
+                                     predictionCol="prediction")
 
-# Utilisation de Word2ve
-file = "tokenSave"
-if not os.path.exists(file):
-    word2Vec = Word2Vec(inputCol="words", outputCol="SentimentTextTransform")
-    model = word2Vec.fit(tok.select("words"))
-    tokenizer.save(file)
-tokenizer = Tokenizer.load(file)
-result = model.transform(tok.select("words"))
-result.show(20)
+pipeline = Pipeline(stages=[tokenizer, stop_remover, countVectors, label_stringIdx, mlp])
+model = pipeline.fit(train) if not os.path.exists("mlp") else PipelineModel.load("mlp")
+
+result = model.transform(test)
+result.show()
+
+model.write().overwrite().save("mlp")
+
+predictionAndLabels = result.select("prediction", "label")
+
+evaluator = MulticlassClassificationEvaluator(metricName="accuracy")
+print("Test set accuracy = " + str(evaluator.evaluate(predictionAndLabels)))
