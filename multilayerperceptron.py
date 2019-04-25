@@ -19,7 +19,7 @@ spark = SparkSession(sc)
 
 df = spark.read.csv("Sentiment Analysis Dataset.csv", header=True)
 
-(train, test) = df.randomSplit([0.7, 0.3])
+(train, test) = df.randomSplit([0.9, 0.1])
 train.show(20)
 tokenizer = Tokenizer(inputCol="SentimentText", outputCol="tokens")
 stop_remover = StopWordsRemover(inputCol="tokens", outputCol="filtered")
@@ -30,11 +30,11 @@ word2vec = Word2Vec(inputCol="filtered", outputCol="features", maxSentenceLength
 
 # mlp = LogisticRegression(maxIter=10, regParam=0.01, featuresCol ="SentimentTextTransform")
 mlp = MultilayerPerceptronClassifier(maxIter=100, layers=[140, 70, 50, 2],
-                                     blockSize=1, seed=123,
+                                     blockSize=64, seed=123,
                                      predictionCol="prediction")
 
 pipeline = Pipeline(stages=[tokenizer, stop_remover, countVectors, label_stringIdx, mlp])
-model = pipeline.fit(train) if not os.path.exists("mlp") else PipelineModel.load("mlp")
+model = pipeline.fit(train) if os.path.exists("mlp") else PipelineModel.load("mlp")
 
 result = model.transform(test)
 result.show()

@@ -29,7 +29,7 @@ df_fitted = pipelineFit.transform(df)
 # df.show(n=10) for debugging purposes
 
 # Data
-(trainingData, test_data) = df_fitted.randomSplit([0.7, 0.3])
+(trainingData, test_data) = df_fitted.randomSplit([0.9, 0.1])
 trainingData.cache()
 test_data.cache()
 
