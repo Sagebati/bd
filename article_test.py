@@ -2,7 +2,7 @@ import os
 
 from pyspark import SparkContext, SparkConf
 from pyspark.ml import Pipeline
-from pyspark.ml.classification import NaiveBayesModel, LogisticRegressionModel
+from pyspark.ml.classification import NaiveBayesModel, LogisticRegressionModel, DecisionTreeClassificationModel
 from pyspark.ml.evaluation import BinaryClassificationEvaluator
 from pyspark.ml.feature import StringIndexer, StopWordsRemover, Tokenizer, HashingTF, IDF
 from pyspark.ml.regression import DecisionTreeModel
@@ -28,8 +28,8 @@ df_fitted = pipelineFit.transform(df)
 
 if os.path.exists("lr") and os.path.exists("bayes") and os.path.exists("dt"):
     bayes_model = NaiveBayesModel.load("bayes")
-    lr_model = LogisticRegressionModel("lr")
-    dt_model = DecisionTreeModel("dt")
+    lr_model = LogisticRegressionModel.load("lr")
+    dt_model = DecisionTreeClassificationModel.load("dt")
     for sample_size in (0.001, 0.002, 0.005, 0.01, 0.015, 0.020, 0.025):
         sample = df_fitted.sample(withReplacement=False, fraction=sample_size)
         bayes_pr = bayes_model.transform(sample)
