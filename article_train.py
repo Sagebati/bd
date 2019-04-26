@@ -6,6 +6,15 @@ from pyspark.ml.classification import LogisticRegression, DecisionTreeClassifier
 from pyspark.ml.evaluation import BinaryClassificationEvaluator
 from pyspark.ml.feature import StringIndexer, StopWordsRemover, Tokenizer, HashingTF, IDF
 from pyspark.sql import SparkSession
+import time
+
+
+def calculate_time(f):
+    start = time.time()
+    model = f()
+    end = time.time()
+    return model, end - start
+
 
 sc = SparkContext(conf=SparkConf())
 spark = SparkSession(sc)
@@ -27,9 +36,10 @@ df_fitted = pipelineFit.transform(df)
 
 for sample_size in (0.001, 0.002, 0.005, 0.01, 0.015, 0.020, 0.025):
     sample = df_fitted.sample(withReplacement=False, fraction=sample_size)
-    bayes_model = NaiveBayes().fit(sample)
-    lr_model = LogisticRegression().fit(sample)
-    dt_model = DecisionTreeClassifier().fit(sample)
+
+    bayes_model, duration_bayes = calculate_time(lambda: NaiveBayes().fit(sample))
+    lr_model, duration_lr = calculate_time(lambda: LogisticRegression().fit(sample))
+    dt_model, duration_dt = calculate_time(lambda: DecisionTreeClassifier().fit(sample))
 
     bayes_pr = bayes_model.transform(df_fitted)
     lr_pr = lr_model.transform(df_fitted)
@@ -38,6 +48,9 @@ for sample_size in (0.001, 0.002, 0.005, 0.01, 0.015, 0.020, 0.025):
     evaluator_lr = BinaryClassificationEvaluator(rawPredictionCol="rawPrediction")
     evaluator_dt = BinaryClassificationEvaluator(rawPredictionCol="rawPrediction")
     evaluator_bayes = BinaryClassificationEvaluator(rawPredictionCol="rawPrediction")
-    print('Bayes Test Area Under ROC sample size : ', sample_size, "score : ", evaluator_bayes.evaluate(bayes_pr))
-    print('Lr Test Area Under ROC sample size : ', sample_size, "score : ", evaluator_lr.evaluate(lr_pr))
-    print('Dt Test Area Under ROC sample size : ', sample_size, "score : ", evaluator_dt.evaluate(dt_pr))
+    print('Bayes Test Area Under ROC sample size : ', sample_size, "score : ", evaluator_bayes.evaluate(bayes_pr),
+          " time: ", duration_bayes)
+    print('Lr Test Area Under ROC sample size : ', sample_size, "score : ", evaluator_lr.evaluate(lr_pr),
+          " time: ", duration_lr)
+    print('Dt Test Area Under ROC sample size : ', sample_size, "score : ", evaluator_dt.evaluate(dt_pr),
+          "time: ", duration_dt)
