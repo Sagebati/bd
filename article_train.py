@@ -1,4 +1,4 @@
-# -*- enconding: utf-8 -*-
+# -*- encoding: utf-8 -*-
 
 from pyspark import SparkContext, SparkConf
 from pyspark.ml import Pipeline
@@ -27,14 +27,13 @@ df_fitted = pipelineFit.transform(df)
 
 for sample_size in (0.001, 0.002, 0.005, 0.01, 0.015, 0.020, 0.025):
     sample = df_fitted.sample(withReplacement=False, fraction=sample_size)
-    sample_test = df_fitted.sample(withReplacement=False, fraction=sample_size)
     bayes_model = NaiveBayes().fit(sample)
     lr_model = LogisticRegression().fit(sample)
     dt_model = DecisionTreeClassifier().fit(sample)
 
-    bayes_pr = bayes_model.transform(sample_test)
-    lr_pr = lr_model.transform(sample_test)
-    dt_pr = dt_model.transform(sample_test)
+    bayes_pr = bayes_model.transform(df_fitted)
+    lr_pr = lr_model.transform(df_fitted)
+    dt_pr = dt_model.transform(df_fitted)
 
     evaluator_lr = BinaryClassificationEvaluator(rawPredictionCol="rawPrediction")
     evaluator_dt = BinaryClassificationEvaluator(rawPredictionCol="rawPrediction")
