@@ -1,3 +1,4 @@
+# -*- encoding: utf-8 -*-
 import os
 
 from pyspark import SparkContext, SparkConf
@@ -5,7 +6,6 @@ from pyspark.ml import Pipeline
 from pyspark.ml.classification import NaiveBayesModel, LogisticRegressionModel, DecisionTreeClassificationModel
 from pyspark.ml.evaluation import BinaryClassificationEvaluator
 from pyspark.ml.feature import StringIndexer, StopWordsRemover, Tokenizer, HashingTF, IDF
-from pyspark.ml.regression import DecisionTreeModel
 from pyspark.sql import SparkSession
 
 sc = SparkContext(conf=SparkConf())

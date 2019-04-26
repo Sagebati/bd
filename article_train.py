@@ -1,3 +1,5 @@
+# -*- enconding: utf-8 -*-
+
 from pyspark import SparkContext, SparkConf
 from pyspark.ml import Pipeline
 from pyspark.ml.classification import LogisticRegression, DecisionTreeClassifier, NaiveBayes
