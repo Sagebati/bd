@@ -33,7 +33,7 @@ hash_tf = HashingTF(numFeatures=2 ** 16, inputCol="words", outputCol='tf')  # Te
 idf = IDF(inputCol='tf', outputCol="features", minDocFreq=5)  # minDocFreq: remove sparse terms
 label_stringIdx = StringIndexer(inputCol="Sentiment", outputCol="label")
 
-rf = RandomForestClassifier()
+rf = RandomForestClassifier(numTrees=100)
 
 pipeline = Pipeline(stages=[tokenizer, stop_remover, hash_tf, idf, label_stringIdx, rf])
 
