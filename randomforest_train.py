@@ -3,7 +3,7 @@
 import time
 
 from pyspark import SparkContext, SparkConf
-from pyspark.ml.classification import MultilayerPerceptronClassifier
+from pyspark.ml.classification import MultilayerPerceptronClassifier, RandomForestClassifier
 from pyspark.ml.evaluation import MulticlassClassificationEvaluator, RegressionEvaluator
 from pyspark.ml.feature import Tokenizer, HashingTF, IDF
 from pyspark.ml.feature import Word2Vec, StopWordsRemover, StringIndexer, CountVectorizer
@@ -33,7 +33,7 @@ hash_tf = HashingTF(numFeatures=2 ** 16, inputCol="words", outputCol='tf')  # Te
 idf = IDF(inputCol='tf', outputCol="features", minDocFreq=5)  # minDocFreq: remove sparse terms
 label_stringIdx = StringIndexer(inputCol="Sentiment", outputCol="label")
 
-rf = RandomForestRegressor()
+rf = RandomForestClassifier()
 
 pipeline = Pipeline(stages=[tokenizer, stop_remover, hash_tf, idf, label_stringIdx, rf])
 

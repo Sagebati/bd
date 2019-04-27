@@ -37,7 +37,7 @@ test_data.cache()
 nb = NaiveBayes(featuresCol="features", labelCol="label")
 
 # Learn if the ml doesn't exist
-nb_model = NaiveBayesModel.load("bayes") if os.path.exists("bayes") else nb.fit(trainingData)
+nb_model = nb.fit(trainingData)
 predictions_nb = nb_model.transform(test_data)
 
 nb_model.write().overwrite().save('bayes')
